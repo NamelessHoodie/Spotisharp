@@ -92,9 +92,10 @@ public static class SpotifyService
         FullPlaylist playlist = await client.Playlists.Get(input);
         if (playlist.Tracks != null)
         {
+            var playlistTracksTotal = playlist.Tracks.Total;
             await foreach(var item in client.Paginate(playlist.Tracks))
             {
-                if (item.Track is FullTrack track)
+                if (item.Track is FullTrack track && track.Album.Id != null)
                 {
                     FullAlbum album = await client.Albums.TryGet(track.Album.Id);
                     TrackInfoModel trackInfo = new TrackInfoModel()
@@ -114,7 +115,7 @@ public static class SpotifyService
                     bag.Add(trackInfo);
                     CConsole.Overwrite
                     (
-                        $"Q: {bag.Count} A: {playlist.Tracks.Total} | {trackInfo}",
+                        $"Q: {bag.Count} | {trackInfo}",
                         topCursorPosition
                     );
                 }
