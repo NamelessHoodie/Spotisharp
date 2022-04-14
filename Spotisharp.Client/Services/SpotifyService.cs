@@ -95,10 +95,12 @@ public static class SpotifyService
             var playlistTracksTotal = playlist.Tracks.Total;
             await foreach(var item in client.Paginate(playlist.Tracks))
             {
+                //SpotifyAPI.Web.
+                TrackInfoModel trackInfo = null;
                 if (item.Track is FullTrack track && track.Album.Id != null)
                 {
                     FullAlbum album = await client.Albums.TryGet(track.Album.Id);
-                    TrackInfoModel trackInfo = new TrackInfoModel()
+                    trackInfo = new TrackInfoModel()
                     {
                         Artist = track.Artists[0].Name,
                         Title = track.Name,
@@ -112,6 +114,24 @@ public static class SpotifyService
                         Genres = album.Genres.FirstOrDefault() ?? string.Empty,
                         Year = DateTime.TryParse(album.ReleaseDate, out var value) ? value.Year : int.Parse(album.ReleaseDate)
                     };
+                }
+                else if (item.Track is FullEpisode episode)
+                {
+                    trackInfo = new TrackInfoModel()
+                    {
+                        Artist = episode.Show.Publisher,
+                        Title = episode.Name,
+                        Url = episode.ExternalUrls["spotify"],
+                        Playlist = playlist.Name ?? string.Empty,
+                        Album = episode.Show.Name,
+                        AlbumPicture = episode.Images[0].Url,
+                        Copyright = episode.Show.Copyrights.FirstOrDefault()?.Text ?? string.Empty,
+                        Year = DateTime.TryParse(episode.ReleaseDate, out var value) ? value.Year : int.Parse(episode.ReleaseDate)
+                    };
+                }
+
+                if (trackInfo != null)
+                {
                     bag.Add(trackInfo);
                     CConsole.Overwrite
                     (
